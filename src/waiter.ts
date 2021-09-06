@@ -1,4 +1,4 @@
-import { ReleaseFn } from './acquire';
+import { ReleaseFn } from './types';
 
 export class Waiter {
   readonly #permits: number;

@@ -1,5 +1,5 @@
 import { Waiter } from "./waiter";
-import { ReleaseFn } from './acquire';
+import { MaybeAsyncFn, ReleaseFn } from './types';
 
 export class Semaphore {
   #permits: number;
@@ -17,6 +17,21 @@ export class Semaphore {
 
   constructor(permits: number) {
     this.#permits = permits;
+  }
+
+  acquireWith<T>(fn: MaybeAsyncFn<T>): Promise<T> {
+    return this.acquireManyWith(1, fn);
+  }
+
+  async acquireManyWith<T>(permits: number, fn: MaybeAsyncFn<T>): Promise<T> {
+    const release = await this.acquireMany(permits);
+    try {
+      return await fn();
+    } catch (e) {
+      throw e;
+    } finally {
+      release();
+    }
   }
 
   acquire(): Promise<ReleaseFn> {
