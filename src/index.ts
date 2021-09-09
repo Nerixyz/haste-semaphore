@@ -1,4 +1,4 @@
-import { Waiter } from "./waiter";
+import { Waiter } from './waiter';
 import { MaybeAsyncFn, ReleaseFn } from './types';
 
 export class Semaphore {
@@ -40,20 +40,20 @@ export class Semaphore {
 
   acquireMany(permits: number): Promise<ReleaseFn> {
     return new Promise<ReleaseFn>((resolve, reject) => {
-      if(this.#closed) {
+      if (this.#closed) {
         reject(/* TODO */);
         // store max permits?
       } else {
         const waiter = new Waiter(permits, resolve);
 
-        if(this.#lastWaiter !== null) {
+        if (this.#lastWaiter !== null) {
           // put the waiter at the end of the list
           this.#lastWaiter.next = waiter;
           // replace the tail with the new waiter
           this.#lastWaiter = waiter;
         }
 
-        if(this.#nextWaiter === null) {
+        if (this.#nextWaiter === null) {
           // the list is empty, we're the only ones waiting
           this.#nextWaiter = waiter;
           this.#lastWaiter = waiter;
@@ -65,11 +65,11 @@ export class Semaphore {
   }
 
   #wakeWaiters() {
-    while(this.#nextWaiter !== null && this.#permits >= this.#nextWaiter.permits) {
+    while (this.#nextWaiter !== null && this.#permits >= this.#nextWaiter.permits) {
       this.#permits -= this.#nextWaiter.permits;
       this.#nextWaiter.wake(this.#releasePermits.bind(this));
 
-      if(this.#lastWaiter === this.#nextWaiter) {
+      if (this.#lastWaiter === this.#nextWaiter) {
         // we're the last waiter - remove us
         this.#lastWaiter = null;
         this.#nextWaiter = null;
