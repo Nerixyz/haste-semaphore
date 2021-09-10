@@ -27,6 +27,8 @@ export class Semaphore {
     const release = await this.acquireMany(permits);
     try {
       return await fn();
+      // we need to re-throw but still catch an error for the finally block
+      // eslint-disable-next-line no-useless-catch
     } catch (e) {
       throw e;
     } finally {
