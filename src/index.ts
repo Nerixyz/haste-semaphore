@@ -5,7 +5,6 @@ export class Semaphore {
   #permits: number;
   #nextWaiter: null | Waiter = null;
   #lastWaiter: null | Waiter = null;
-  #closed = false;
 
   get availablePermits() {
     return this.#permits;
@@ -16,6 +15,9 @@ export class Semaphore {
   }
 
   constructor(permits: number) {
+    if (!Number.isSafeInteger(permits) || permits < 1) {
+      throw new Error('Invalid number of permits specified');
+    }
     this.#permits = permits;
   }
 
@@ -41,28 +43,23 @@ export class Semaphore {
   }
 
   acquireMany(permits: number): Promise<ReleaseFn> {
-    return new Promise<ReleaseFn>((resolve, reject) => {
-      if (this.#closed) {
-        reject(/* TODO */);
-        // store max permits?
-      } else {
-        const waiter = new Waiter(permits, resolve);
+    return new Promise<ReleaseFn>(resolve => {
+      const waiter = new Waiter(permits, resolve);
 
-        if (this.#lastWaiter !== null) {
-          // put the waiter at the end of the list
-          this.#lastWaiter.next = waiter;
-          // replace the tail with the new waiter
-          this.#lastWaiter = waiter;
-        }
-
-        if (this.#nextWaiter === null) {
-          // the list is empty, we're the only ones waiting
-          this.#nextWaiter = waiter;
-          this.#lastWaiter = waiter;
-        }
-
-        this.#wakeWaiters();
+      if (this.#lastWaiter !== null) {
+        // put the waiter at the end of the list
+        this.#lastWaiter.next = waiter;
+        // replace the tail with the new waiter
+        this.#lastWaiter = waiter;
       }
+
+      if (this.#nextWaiter === null) {
+        // the list is empty, we're the only ones waiting
+        this.#nextWaiter = waiter;
+        this.#lastWaiter = waiter;
+      }
+
+      this.#wakeWaiters();
     });
   }
 
