@@ -16,8 +16,14 @@ export class Waiter {
   }
 
   wake(releasePermits: (permits: number) => void) {
+    let called = false;
     this.#resolve(() => {
-      releasePermits(this.permits);
+      if (called) {
+        throw new Error('Attempting to release permits that were previously released');
+      } else {
+        releasePermits(this.permits);
+        called = true;
+      }
     });
   }
 }
