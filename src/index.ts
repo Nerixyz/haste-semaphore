@@ -21,10 +21,33 @@ export class Semaphore {
     this.#permits = permits;
   }
 
+  /**
+   * Acquire one permit with a callback that's called once the permits are acquired.
+   * Throwing (or rejecting) in the callback is fine and properly handled.
+   *
+   * **The promise will never reject.**
+   *
+   * @param fn The callback function. It may return a promise which is then awaited.
+   * @returns {Promise<T>} This promise resolves once the permits are released, i.e. when the callback has been called.
+   * It resolves with the return value of the callback.
+   */
   acquireWith<T>(fn: MaybeAsyncFn<T>): Promise<T> {
     return this.acquireManyWith(1, fn);
   }
 
+  /**
+   * Acquire many permits at once with a callback that's called once the permits are acquired.
+   * Throwing (or rejecting) in the callback is fine and properly handled.
+   *
+   * **The promise will never reject.**
+   *
+   * If `permits` is greater than the maximum number of permits for this semaphore,
+   * the promise will _never_ resolve and the semaphore will be blocked forever.
+   * @param {number} permits The number of permits to acquire
+   * @param fn The callback function. It may return a promise which is then awaited.
+   * @returns {Promise<T>} This promise resolves once the permits are released, i.e. when the callback has been called.
+   * It resolves with the return value of the callback.
+   */
   async acquireManyWith<T>(permits: number, fn: MaybeAsyncFn<T>): Promise<T> {
     const release = await this.acquireMany(permits);
     try {
@@ -38,10 +61,26 @@ export class Semaphore {
     }
   }
 
+  /**
+   * Acquire one permit.
+   *
+   * **The promise will never reject.**
+   * @returns {Promise<ReleaseFn>} The cleanup function. Call this function to release the permits.
+   */
   acquire(): Promise<ReleaseFn> {
     return this.acquireMany(1);
   }
 
+  /**
+   * Acquire many permits at once.
+   *
+   * **The promise will never reject.**
+   *
+   * If `permits` is greater than the maximum number of permits for this semaphore,
+   * the promise will _never_ resolve and the semaphore will be blocked forever.
+   * @param {number} permits The number of permits to acquire
+   * @returns {Promise<ReleaseFn>} The cleanup function. Call this function to release the permits.
+   */
   acquireMany(permits: number): Promise<ReleaseFn> {
     return new Promise<ReleaseFn>(resolve => {
       const waiter = new Waiter(permits, resolve);
